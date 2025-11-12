@@ -7,6 +7,7 @@ from tkinter import messagebox
 
 import requests
 import ttkbootstrap as ttk
+from ttkbootstrap.constants import BOTH, HORIZONTAL, LEFT, RIGHT, W, X
 
 API_BASE = "http://127.0.0.1:8000/api"
 
@@ -27,20 +28,20 @@ class SpotifyStyleGUI(ttk.Window):
     def _build_layout(self) -> None:
         padding = 15
         container = ttk.Frame(self, padding=padding)
-        container.pack(fill=ttk.BOTH, expand=True)
+        container.pack(fill=BOTH, expand=True)
 
         title = ttk.Label(container, text="Break Session Control", font=("Inter", 18, "bold"))
         title.pack(pady=(0, 10))
 
         self.playlist_combo = ttk.Combobox(container, bootstyle="dark", state="readonly")
-        self.playlist_combo.pack(fill=ttk.X, pady=5)
+        self.playlist_combo.pack(fill=X, pady=5)
 
         minutes_frame = ttk.Frame(container)
-        minutes_frame.pack(fill=ttk.X, pady=5)
-        ttk.Label(minutes_frame, text="Session minutes").pack(side=ttk.LEFT)
+        minutes_frame.pack(fill=X, pady=5)
+        ttk.Label(minutes_frame, text="Session minutes").pack(side=LEFT)
         self.minutes_entry = ttk.Entry(minutes_frame)
         self.minutes_entry.insert(0, "15")
-        self.minutes_entry.pack(side=ttk.RIGHT, fill=ttk.X, expand=True)
+        self.minutes_entry.pack(side=RIGHT, fill=X, expand=True)
 
         self.auto_power_check = ttk.Checkbutton(
             container,
@@ -48,43 +49,43 @@ class SpotifyStyleGUI(ttk.Window):
             variable=self.power_auto,
             bootstyle="success-toolbutton",
         )
-        self.auto_power_check.pack(anchor=ttk.W, pady=5)
+        self.auto_power_check.pack(anchor=W, pady=5)
 
         button_frame = ttk.Frame(container)
-        button_frame.pack(fill=ttk.X, pady=10)
-        ttk.Button(button_frame, text="Play", command=self.on_play, bootstyle="success").pack(side=ttk.LEFT, expand=True, padx=5)
-        ttk.Button(button_frame, text="Stop", command=self.on_stop, bootstyle="danger").pack(side=ttk.LEFT, expand=True, padx=5)
-        ttk.Button(button_frame, text="Skip", command=self.on_skip, bootstyle="secondary").pack(side=ttk.LEFT, expand=True, padx=5)
+        button_frame.pack(fill=X, pady=10)
+        ttk.Button(button_frame, text="Play", command=self.on_play, bootstyle="success").pack(side=LEFT, expand=True, padx=5)
+        ttk.Button(button_frame, text="Stop", command=self.on_stop, bootstyle="danger").pack(side=LEFT, expand=True, padx=5)
+        ttk.Button(button_frame, text="Skip", command=self.on_skip, bootstyle="secondary").pack(side=LEFT, expand=True, padx=5)
 
         volume_label = ttk.Label(container, text="Volume", font=("Inter", 12, "bold"))
-        volume_label.pack(anchor=ttk.W, pady=(20, 5))
+        volume_label.pack(anchor=W, pady=(20, 5))
         self.volume_var = ttk.IntVar(value=70)
         self.volume_slider = ttk.Scale(
             container,
             from_=0,
             to=100,
-            orient=ttk.HORIZONTAL,
+            orient=HORIZONTAL,
             variable=self.volume_var,
             command=self.on_volume_change,
         )
-        self.volume_slider.pack(fill=ttk.X)
+        self.volume_slider.pack(fill=X)
 
         delay_frame = ttk.Labelframe(container, text="Timed session", padding=padding)
-        delay_frame.pack(fill=ttk.X, pady=20)
-        ttk.Label(delay_frame, text="Delay start (minutes)").pack(anchor=ttk.W)
+        delay_frame.pack(fill=X, pady=20)
+        ttk.Label(delay_frame, text="Delay start (minutes)").pack(anchor=W)
         self.delay_entry = ttk.Entry(delay_frame)
         self.delay_entry.insert(0, "5")
-        self.delay_entry.pack(fill=ttk.X, pady=5)
-        ttk.Button(delay_frame, text="Start timed session", command=self.on_timed_session, bootstyle="info").pack(fill=ttk.X)
+        self.delay_entry.pack(fill=X, pady=5)
+        ttk.Button(delay_frame, text="Start timed session", command=self.on_timed_session, bootstyle="info").pack(fill=X)
 
         status_frame = ttk.Labelframe(container, text="Status", padding=padding)
-        status_frame.pack(fill=ttk.X)
+        status_frame.pack(fill=X)
         self.status_label = ttk.Label(status_frame, text="Idle", font=("Inter", 16, "bold"))
-        self.status_label.pack(anchor=ttk.W)
+        self.status_label.pack(anchor=W)
         self.eta_label = ttk.Label(status_frame, text="Session ends: —")
-        self.eta_label.pack(anchor=ttk.W, pady=2)
+        self.eta_label.pack(anchor=W, pady=2)
         self.power_label = ttk.Label(status_frame, text="Power: OFF")
-        self.power_label.pack(anchor=ttk.W, pady=2)
+        self.power_label.pack(anchor=W, pady=2)
 
     # ------------------------------------------------------------------
     def refresh_playlists(self) -> None:
