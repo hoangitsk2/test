@@ -7,8 +7,9 @@ from pathlib import Path
 import pytest
 
 from config import load_config
-from models import Base, Playlist, PlaylistTrack, Track, ensure_state_row, make_engine
+from models import Base, Command, Playlist, PlaylistTrack, Track, ensure_state_row, make_engine
 from player import DummyPlayer
+from sqlalchemy import select
 
 
 def test_db_init(tmp_path):
@@ -135,3 +136,23 @@ def test_volume_endpoint(app_module, client):
     with app_module.SessionLocal() as session:
         state = ensure_state_row(session)
         assert state.volume == 55
+
+
+def test_api_tracks_and_preview(app_module, client):
+    with app_module.SessionLocal() as session:
+        ensure_state_row(session)
+        track = _add_track(session, "sample.mp3")
+
+    list_response = client.get("/api/tracks")
+    assert list_response.status_code == 200
+    data = list_response.get_json()
+    assert any(item["id"] == track.id for item in data)
+
+    preview_response = client.post("/api/preview", json={"track_id": track.id})
+    assert preview_response.status_code == 200
+
+    with app_module.SessionLocal() as session:
+        command = session.scalars(
+            select(Command).where(Command.type == "PREVIEW").order_by(Command.created_at.desc())
+        ).first()
+        assert command is not None

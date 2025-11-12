@@ -21,6 +21,7 @@
             <tr>
               <th>Name</th>
               <th>Duration</th>
+              <th>Preview</th>
               <th></th>
             </tr>
           </thead>
@@ -30,6 +31,15 @@
                 <td>{{ track.orig_filename }}</td>
                 <td>{{ track.duration_sec or '—' }}</td>
                 <td>
+                  <audio controls class="w-48">
+                    <source src="{{ url_for('serve_music', filename=track.stored_filename) }}" type="{{ track.content_type or 'audio/mpeg' }}" />
+                    Your browser does not support audio playback.
+                  </audio>
+                  <button class="btn btn-xs btn-primary mt-2" type="button" data-preview="{{ track.id }}">
+                    Play on system
+                  </button>
+                </td>
+                <td>
                   <form method="post" action="{{ url_for('delete_track', track_id=track.id) }}">
                     <button class="btn btn-xs btn-outline" type="submit">Delete</button>
                   </form>
@@ -37,7 +47,7 @@
               </tr>
             {% else %}
               <tr>
-                <td colspan="3" class="text-center opacity-70">No tracks uploaded yet.</td>
+                <td colspan="4" class="text-center opacity-70">No tracks uploaded yet.</td>
               </tr>
             {% endfor %}
           </tbody>

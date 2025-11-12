@@ -18,10 +18,12 @@ class SpotifyStyleGUI(ttk.Window):
         self.title("auto_break_player controller")
         self.geometry("480x620")
         self.playlists: list[dict[str, object]] = []
+        self.tracks: list[dict[str, object]] = []
         self.power_auto = ttk.BooleanVar(value=True)
 
         self._build_layout()
         self.after(100, self.refresh_playlists)
+        self.after(200, self.refresh_tracks)
         self.after(1000, self.refresh_status)
 
     # ------------------------------------------------------------------
@@ -50,6 +52,17 @@ class SpotifyStyleGUI(ttk.Window):
             bootstyle="success-toolbutton",
         )
         self.auto_power_check.pack(anchor=W, pady=5)
+
+        preview_frame = ttk.Labelframe(container, text="Track preview", padding=padding)
+        preview_frame.pack(fill=X, pady=5)
+        self.preview_combo = ttk.Combobox(preview_frame, bootstyle="dark", state="readonly")
+        self.preview_combo.pack(fill=X, pady=(0, 8))
+        ttk.Button(
+            preview_frame,
+            text="Play preview on system",
+            command=self.on_preview,
+            bootstyle="secondary",
+        ).pack(fill=X)
 
         button_frame = ttk.Frame(container)
         button_frame.pack(fill=X, pady=10)
@@ -102,6 +115,20 @@ class SpotifyStyleGUI(ttk.Window):
         finally:
             self.after(30000, self.refresh_playlists)
 
+    def refresh_tracks(self) -> None:
+        try:
+            response = requests.get(f"{API_BASE}/tracks", timeout=5)
+            response.raise_for_status()
+            self.tracks = response.json()
+            names = [item["name"] for item in self.tracks]
+            self.preview_combo["values"] = names
+            if names and not self.preview_combo.get():
+                self.preview_combo.current(0)
+        except Exception as exc:  # pragma: no cover - UI feedback
+            messagebox.showerror("Error", f"Failed to load tracks: {exc}")
+        finally:
+            self.after(45000, self.refresh_tracks)
+
     def refresh_status(self) -> None:
         try:
             response = requests.get(f"{API_BASE}/status", timeout=5)
@@ -129,6 +156,15 @@ class SpotifyStyleGUI(ttk.Window):
                 return int(item.get("id"))
         return None
 
+    def _selected_preview_track_id(self) -> int | None:
+        if not self.tracks:
+            return None
+        name = self.preview_combo.get()
+        for item in self.tracks:
+            if item.get("name") == name:
+                return int(item.get("id"))
+        return None
+
     def on_play(self) -> None:
         playlist_id = self._selected_playlist_id()
         if playlist_id is None:
@@ -139,6 +175,18 @@ class SpotifyStyleGUI(ttk.Window):
             if self.power_auto.get():
                 self._post("power", {"on": True})
             self._post("play", {"playlist_id": playlist_id, "minutes": minutes})
+        except Exception as exc:
+            messagebox.showerror("Error", str(exc))
+
+    def on_preview(self) -> None:
+        track_id = self._selected_preview_track_id()
+        if track_id is None:
+            messagebox.showwarning("Track preview", "Select a track to preview")
+            return
+        try:
+            if self.power_auto.get():
+                self._post("power", {"on": True})
+            self._post("preview", {"track_id": track_id})
         except Exception as exc:
             messagebox.showerror("Error", str(exc))
 

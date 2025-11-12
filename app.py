@@ -309,6 +309,23 @@ def api_playlists() -> Response:
     return jsonify([{"id": p.id, "name": p.name} for p in playlists])
 
 
+@app.route("/api/tracks")
+def api_tracks() -> Response:
+    session = get_session()
+    tracks = session.scalars(select(Track)).all()
+    return jsonify(
+        [
+            {
+                "id": track.id,
+                "name": track.orig_filename,
+                "duration": track.duration_sec,
+                "preview_url": url_for("serve_music", filename=track.stored_filename, _external=True),
+            }
+            for track in tracks
+        ]
+    )
+
+
 def _playlist_track_count(session, playlist_id: int) -> int:
     return session.scalar(
         select(func.count()).select_from(PlaylistTrack).where(PlaylistTrack.playlist_id == playlist_id)
@@ -383,6 +400,21 @@ def api_power() -> Response:
     enqueue_command(session, "POWER_ON" if desired else "POWER_OFF")
     log(session, "info", "Power command queued", {"power_on": desired})
     return jsonify({"status": "queued", "power_on": desired})
+
+
+@app.route("/api/preview", methods=["POST"])
+def api_preview() -> Response:
+    session = get_session()
+    data = get_data()
+    track_id = to_int(data.get("track_id")) if data else None
+    if track_id is None:
+        return jsonify({"error": "track_id required"}), 400
+    track = session.get(Track, track_id)
+    if not track:
+        return jsonify({"error": "Track not found"}), 404
+    enqueue_command(session, "PREVIEW", {"track_id": track_id})
+    log(session, "info", "Preview command queued", {"track_id": track_id})
+    return jsonify({"status": "queued"})
 
 
 @app.route("/api/status")

@@ -5,7 +5,7 @@ import datetime as dt
 import json
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from config import load_config
 from gpio_control import RelayController
@@ -53,7 +53,7 @@ class PlaybackDaemon:
     def _log(self, session, level: str, message: str, meta: Optional[Dict[str, object]] = None) -> None:
         log(session, level, message, meta or {})
 
-    def _playlist_files(self, session, playlist_id: int) -> List[str]:
+    def _playlist_files(self, session, playlist_id: int) -> Tuple[List[str], List[int]]:
         stmt = (
             select(PlaylistTrack, Track)
             .join(Track)
@@ -61,41 +61,83 @@ class PlaybackDaemon:
             .order_by(PlaylistTrack.position)
         )
         result = session.execute(stmt).all()
-        self.current_track_ids = [track.id for _, track in result]
         music_dir = Path(self.config["music_dir"])  # type: ignore[index]
-        return [str(music_dir / track.stored_filename) for _, track in result]
+        track_ids = [track.id for _, track in result]
+        files = [str(music_dir / track.stored_filename) for _, track in result]
+        return files, track_ids
 
-    def _start_session(self, session, playlist_id: int, minutes: int, reason: str) -> None:
-        files = self._playlist_files(session, playlist_id)
-        if not files:
-            self._log(session, "warning", "Playlist empty, cannot start session", {"playlist_id": playlist_id})
-            return
+    def _start_tracks(
+        self,
+        session,
+        file_paths: List[str],
+        track_ids: List[int],
+        duration_seconds: int,
+        playlist_id: Optional[int],
+    ) -> bool:
+        if not file_paths:
+            return False
+        duration_seconds = max(30, duration_seconds)
         state = ensure_state_row(session)
         volume = state.volume or int(self.config.get("volume_default", 70))
         state.volume = volume
         if not self.relay.is_power_on:
             self.relay.power_on()
-        self.player.load_playlist(files)
+        self.player.load_playlist(file_paths)
         self.player.set_volume(volume)
         self.player.play()
         now = dt.datetime.now()
         state.status = "playing"
         state.playlist_id = playlist_id
-        state.session_end_at = now + dt.timedelta(minutes=minutes)
+        state.session_end_at = now + dt.timedelta(seconds=duration_seconds)
         state.power_on = True
-        state.current_track_id = self.current_track_ids[0] if self.current_track_ids else None
+        self.current_track_ids = track_ids
+        state.current_track_id = track_ids[0] if track_ids else None
         state.updated_at = now
         session.commit()
-        self._log(
-            session,
-            "info",
-            "Session started",
-            {
-                "playlist_id": playlist_id,
-                "minutes": minutes,
-                "reason": reason,
-            },
-        )
+        return True
+
+    def _start_session(self, session, playlist_id: int, minutes: int, reason: str) -> None:
+        files, track_ids = self._playlist_files(session, playlist_id)
+        if not files:
+            self._log(session, "warning", "Playlist empty, cannot start session", {"playlist_id": playlist_id})
+            return
+        if self._start_tracks(session, files, track_ids, minutes * 60, playlist_id):
+            self._log(
+                session,
+                "info",
+                "Session started",
+                {
+                    "playlist_id": playlist_id,
+                    "minutes": minutes,
+                    "reason": reason,
+                },
+            )
+
+    def _start_preview(self, session, track_id: int) -> None:
+        track = session.get(Track, track_id)
+        if not track:
+            self._log(session, "warning", "Preview track missing", {"track_id": track_id})
+            return
+        music_dir = Path(self.config["music_dir"])  # type: ignore[index]
+        file_path = music_dir / track.stored_filename
+        if not file_path.exists():
+            self._log(session, "warning", "Preview file missing", {"track_id": track_id})
+            return
+        state = ensure_state_row(session)
+        if state.status == "playing":
+            self._stop_session(session, "preview interrupt")
+        duration = track.duration_sec or int(self.config.get("session_default_minutes", 15)) * 60
+        duration = max(30, int(duration))
+        if self._start_tracks(session, [str(file_path)], [track.id], duration, None):
+            self._log(
+                session,
+                "info",
+                "Preview started",
+                {
+                    "track_id": track_id,
+                    "duration_seconds": duration,
+                },
+            )
 
     def _stop_session(self, session, reason: str) -> None:
         state = ensure_state_row(session)
@@ -178,6 +220,12 @@ class PlaybackDaemon:
                 state.updated_at = dt.datetime.now()
                 session.commit()
                 self._log(session, "info", "Relay powered off")
+            elif command.type == "PREVIEW":
+                track_id = payload.get("track_id")
+                if track_id is None:
+                    self._log(session, "warning", "Preview command missing track_id")
+                else:
+                    self._start_preview(session, int(track_id))
             command.processed_at = dt.datetime.now()
             session.commit()
 

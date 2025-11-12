@@ -58,6 +58,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  document.querySelectorAll("[data-preview]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const trackId = Number(btn.dataset.preview);
+      if (!trackId) {
+        return;
+      }
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Queued...";
+      try {
+        await api("preview", { track_id: trackId });
+        toast("Preview command queued");
+      } catch (error) {
+        toast(error.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+  });
+
   if (volumeSlider) {
     let debounce;
     volumeSlider.addEventListener("input", () => {
