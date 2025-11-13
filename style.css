@@ -18,6 +18,7 @@ body {
   background-color: var(--dark-color);
   overflow: hidden;
   perspective: 1000px;
+  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
 }
 
 
@@ -34,6 +35,217 @@ body {
 .flowers {
   position: relative;
   transform: scale(0.7);
+}
+
+.music-player {
+  position: fixed;
+  bottom: 3vmin;
+  right: 3vmin;
+  width: min(90vw, 360px);
+  background: rgba(15, 15, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  padding: 1.25rem;
+  color: #f7f7ff;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.45);
+  display: grid;
+  gap: 0.9rem;
+  z-index: 40;
+}
+
+.music-player__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.music-player__now-playing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-width: 70%;
+}
+
+.music-player__title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-player__artist {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-player__playlist-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: inherit;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.music-player__playlist-toggle:hover,
+.music-player__playlist-toggle:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.music-player__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+.music-player__button {
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: inherit;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.music-player__button:hover,
+.music-player__button:focus-visible {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.music-player__button--play {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: 1.35rem;
+  background: linear-gradient(135deg, #7b5cff, #5f9fff);
+  box-shadow: 0 10px 25px rgba(91, 138, 255, 0.35);
+}
+
+.music-player__progress,
+.music-player__volume {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.music-player__volume {
+  grid-template-columns: auto 1fr;
+}
+
+.music-player__time {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+#progress-bar,
+#volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  outline: none;
+}
+
+#progress-bar::-webkit-slider-thumb,
+#volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #8fa8ff;
+  border: 2px solid #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+#progress-bar::-webkit-slider-thumb:hover,
+#volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+#progress-bar::-moz-range-thumb,
+#volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #8fa8ff;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+
+.music-player__playlist {
+  display: grid;
+  gap: 0.4rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.music-player__track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: inherit;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.music-player__track:hover,
+.music-player__track:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.music-player__track-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.music-player__track-artist {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.music-player__track.is-active {
+  background: rgba(127, 167, 255, 0.25);
+  box-shadow: 0 8px 20px rgba(91, 138, 255, 0.25);
+}
+
+@media (max-width: 720px) {
+  body {
+    align-items: stretch;
+    padding: 1.5rem 0;
+  }
+
+  .music-player {
+    position: static;
+    margin: 0 auto;
+    width: min(100%, 400px);
+  }
 }
 
 .flower {
