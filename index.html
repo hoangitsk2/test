@@ -306,6 +306,35 @@
             </div>
           </div>
         </div>
+
+        <div class="music-player" role="complementary" aria-label="Trình phát nhạc">
+          <div class="music-player__header">
+            <button class="music-player__playlist-toggle" id="toggle-track-list" aria-expanded="false" aria-controls="track-list">
+              🎵 Danh sách
+            </button>
+            <div class="music-player__now-playing" aria-live="polite">
+              <span class="music-player__title" id="track-title">Đang tải...</span>
+              <span class="music-player__artist" id="track-artist"></span>
+            </div>
+          </div>
+          <div class="music-player__controls">
+            <button class="music-player__button" id="prev-track" aria-label="Bài trước">⏮</button>
+            <button class="music-player__button music-player__button--play" id="play-pause" aria-label="Phát hoặc tạm dừng">▶</button>
+            <button class="music-player__button" id="next-track" aria-label="Bài tiếp theo">⏭</button>
+          </div>
+          <div class="music-player__progress">
+            <span class="music-player__time" id="current-time">0:00</span>
+            <input type="range" min="0" max="100" value="0" id="progress-bar" aria-label="Tiến độ bài hát">
+            <span class="music-player__time" id="duration">0:00</span>
+          </div>
+          <div class="music-player__volume">
+            <button class="music-player__button" id="mute-toggle" aria-label="Bật hoặc tắt âm">🔊</button>
+            <input type="range" min="0" max="100" value="80" id="volume-slider" aria-label="Âm lượng">
+          </div>
+          <div class="music-player__playlist" id="track-list" hidden></div>
+          <audio id="audio-player" crossorigin="anonymous"></audio>
+        </div>
+
         <script src="java.js"></script>
 </body>
 </html>
